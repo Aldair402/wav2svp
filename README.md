@@ -10,7 +10,7 @@ wav2svp is a project that converts a waveform to a Synthesizer V Project (SVP) f
 
 ### Usage
 
-You can download the **One click startup package** from [releases](https://github.com/SUC-DriverOld/wav2svp/releases), unzip and double click `go-webui.abt` to start the WebUI.
+You can download the **One click startup package** from [releases](https://github.com/SUC-DriverOld/wav2svp/releases), unzip and double click `go-webui.bat` to start the WebUI.
 
 ### Run from Code
 
