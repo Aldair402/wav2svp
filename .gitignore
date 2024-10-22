@@ -1,0 +1,9 @@
+*.ckpt
+*.pt
+__pycache__
+input/
+results/
+workenv/
+temp.txt
+*.svp
+*.bat
