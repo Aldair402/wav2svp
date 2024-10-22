@@ -4,6 +4,8 @@ from infer import infer
 
 def inference(model, input, bpm):
     model_path = os.path.join('weights', model)
+    if not input.lower().endswith('.wav'):
+        raise gr.Error('Input file must be a wav file.')
     return infer(input, model_path, bpm)
 
 def webui():

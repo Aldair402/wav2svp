@@ -76,6 +76,7 @@ def infer(audio_path, model_path, tempo=120):
     print("building midi file")
     midi_path = os.path.join('results', f'{basename}.mid')
     save_midi(midis, tempo, chunks, midi_path)
+    print("Success")
 
     return svp_path, midi_path
 
