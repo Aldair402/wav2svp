@@ -12,19 +12,21 @@ def build_svp(template, midis, f0, tempo, basename: str) -> None:
     per_dur = 705600000 # 每拍在sv的时长
     per_time = 60 / tempo # 每拍的时间
     template["time"]["tempo"] = [{"position": 0, "bpm": tempo}]
-    dur_next = 0
 
+    index = 0
     for midi in tqdm(midis, desc="Generate midi notes"):
+        offset = f0[index]["offset"] / per_time * per_dur # 音符的起始时间在sv的时长
+
         dur = midi["note_dur"] # 音符的时长
         pitch = midi["note_midi"] # 音符的音高
         rest = midi["note_rest"] # 是否为休止符
+        midi_duration = 0 # 该段音符的总时长
 
         for i in range(len(pitch)):
 
-            beat = dur[i] / per_time # 音符的拍数
-            current_duration = beat * per_dur # 当前音符在sv的时长
-            onset = dur_next # 音符的起始时间
-            dur_next = int(current_duration) + dur_next # 下一个音符的起始时间
+            current_duration = dur[i] / per_time * per_dur # 当前音符在sv的时长
+            onset = midi_duration + offset # 音符的起始时间
+            midi_duration += current_duration
             
             if rest[i]: # 休止符
                 continue
@@ -75,6 +77,7 @@ def build_svp(template, midis, f0, tempo, basename: str) -> None:
             }
             notes.append(note)
             datas.append(data)
+        index += 1
 
     template["tracks"][0]["mainGroup"]["notes"] = notes
     template["tracks"][0]["mainGroup"]["uuid"] = str(uuid.uuid4()).lower()
