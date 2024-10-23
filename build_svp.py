@@ -15,7 +15,7 @@ def build_svp(template, midis, f0, tempo, basename: str) -> None:
 
     index = 0
     for midi in tqdm(midis, desc="Generate midi notes"):
-        offset = f0[index]["offset"] / per_time * per_dur # 音符的起始时间在sv的时长
+        offset = int(f0[index]["offset"] / per_time * per_dur) # 音符的起始时间在sv的时长
 
         dur = midi["note_dur"] # 音符的时长
         pitch = midi["note_midi"] # 音符的音高
@@ -26,7 +26,7 @@ def build_svp(template, midis, f0, tempo, basename: str) -> None:
 
             current_duration = dur[i] / per_time * per_dur # 当前音符在sv的时长
             onset = midi_duration + offset # 音符的起始时间
-            midi_duration += current_duration
+            midi_duration += int(current_duration)
             
             if rest[i]: # 休止符
                 continue
