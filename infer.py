@@ -27,12 +27,30 @@ config = load_config('weights/config.yaml')
 sr = config['audio_sample_rate']
 
 def audio_slicer(audio_path: str) -> list:
+    """
+    Returns:
+        list of dict: [{
+            "offset": np.float64,
+            "waveform": array of float, dtype=float32,
+        }, ...]
+    """
     waveform, _ = librosa.load(audio_path, sr=sr, mono=True)
     slicer = Slicer(sr=sr, max_sil_kept=1000)
     chunks = slicer.slice(waveform)
     return chunks
 
 def get_midi(chunks: list, model_path: str) -> list:
+    """
+    Args:
+        chunks (list): results from audio_slicer
+
+    Returns:
+        list of dict: [{
+            "note_midi": array of float, dtype=float32,
+            "note_dur": array of float,
+            "note_rest": array of bool,
+        }, ...]
+    """
     infer_cls = inference.task_inference_mapping[config['task_cls']]
     pkg = ".".join(infer_cls.split(".")[:-1])
     cls_name = infer_cls.split(".")[-1]
@@ -48,6 +66,16 @@ def save_midi(midis: list, tempo: int, chunks: list, midi_path: str) -> None:
     midi_file.save(midi_path)
 
 def get_f0(chunks: list) -> list:
+    """
+    Args:
+        chunks (list): results from audio_slicer
+
+    Returns:
+        list of dict: [{
+            "offset": np.float64,
+            "f0": array of float, dtype=float32,
+        }, ...]
+    """
     f0 = []
     rmvpe = RMVPE(model_path='weights/rmvpe.pt') # hop_size=160
     print("loading RMVPE model")
@@ -60,13 +88,13 @@ def get_f0(chunks: list) -> list:
         f0.append(f0_data)
     return f0
 
-def infer(audio_path, model_path, tempo=120):
+def wav2svp(audio_path, model_path, tempo=120):
     os.makedirs('results', exist_ok=True)
 
     chunks = audio_slicer(audio_path)
     midis = get_midi(chunks, model_path)
     f0 = get_f0(chunks)
-    
+
     basename = os.path.basename(audio_path).split('.')[0]
     template = load_config('template.json')
 
@@ -82,11 +110,13 @@ def infer(audio_path, model_path, tempo=120):
 
 if __name__ == '__main__':
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Inference for wav2svp')
     parser.add_argument('audio_path', type=str, help='Path to the input audio file')
-    parser.add_argument('model_path', type=str, default="weights/model_steps_64000_simplified.ckpt", help='Path to the model file')
+    parser.add_argument('--model_path', type=str, default="weights/model_steps_64000_simplified.ckpt", help='Path to the model file')
     parser.add_argument('--tempo', type=int, default=120, help='Tempo value for the midi file')
-    
+
     args = parser.parse_args()
-    infer(args.audio_path, args.model_path, args.tempo)
+    assert os.path.isfile("weights/rmvpe.pt"), "RMVPE model not found"
+    assert os.path.isfile(args.model_path), "SOME Model not found"
+    wav2svp(args.audio_path, args.model_path, args.tempo)

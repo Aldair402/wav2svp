@@ -5,7 +5,7 @@ import math
 from tqdm import tqdm
 
 
-def build_svp(template, midis, f0, tempo, basename: str) -> None:
+def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str) -> None:
     notes = [] # 用于保存的音符数据
     datas = [] # 用于记录的音符数据
 
@@ -70,6 +70,7 @@ def build_svp(template, midis, f0, tempo, basename: str) -> None:
                     ]
                 }
             }
+
             data = {
                 "start": int(onset),
                 "finish": int(current_duration + onset),

@@ -53,11 +53,11 @@ Inference for wav2svp
 
 positional arguments:
   audio_path     Path to the input audio file
-  model_path     Path to the model file
 
 options:
   -h, --help     show this help message and exit
-  --tempo TEMPO  Tempo value for the midi file
+  --model_path     Path to the model file, default: weights/model_steps_64000_simplified.ckpt
+  --tempo TEMPO  Tempo value for the midi file, default: 120
 ```
 
 You can find the results in the `results` folder.
