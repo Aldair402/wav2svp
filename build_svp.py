@@ -43,32 +43,10 @@ def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str) 
                 "pitch": int(current_pitch),
                 "detune": 0,
                 "instantMode": False,
-                "attributes": {
-                    "evenSyllableDuration": True
-                },
-                "systemAttributes": {
-                    "evenSyllableDuration": True
-                },
-                "pitchTakes": {
-                    "activeTakeId": 0,
-                    "takes": [
-                        {
-                            "id": 0,
-                            "expr": 0,
-                            "liked": False
-                        }
-                    ]
-                },
-                "timbreTakes": {
-                    "activeTakeId": 0,
-                    "takes": [
-                        {
-                            "id": 0,
-                            "expr": 0,
-                            "liked": False
-                        }
-                    ]
-                }
+                "attributes": {"evenSyllableDuration": True},
+                "systemAttributes": {"evenSyllableDuration": True},
+                "pitchTakes": {"activeTakeId": 0,"takes": [{"id": 0,"expr": 0,"liked": False}]},
+                "timbreTakes": {"activeTakeId": 0,"takes": [{"id": 0,"expr": 0,"liked": False}]}
             }
 
             data = {

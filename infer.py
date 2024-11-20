@@ -113,8 +113,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Inference for wav2svp')
     parser.add_argument('audio_path', type=str, help='Path to the input audio file')
-    parser.add_argument('--model_path', type=str, default="weights/model_steps_64000_simplified.ckpt", help='Path to the model file')
-    parser.add_argument('--tempo', type=int, default=120, help='Tempo value for the midi file')
+    parser.add_argument('--model_path', type=str, default="weights/model_steps_64000_simplified.ckpt", help='Path to the model file, default: weights/model_steps_64000_simplified.ckpt')
+    parser.add_argument('--tempo', type=int, default=120, help='Tempo value for the midi file, default: 120')
 
     args = parser.parse_args()
     assert os.path.isfile("weights/rmvpe.pt"), "RMVPE model not found"
