@@ -1,12 +1,12 @@
 import os
 import gradio as gr
-from infer import infer
+from infer import wav2svp
 
 def inference(model, input, bpm):
     model_path = os.path.join('weights', model)
     if not input.lower().endswith('.wav'):
         raise gr.Error('Input file must be a wav file.')
-    return infer(input, model_path, bpm)
+    return wav2svp(input, model_path, bpm)
 
 def webui():
     choices = []
@@ -24,7 +24,7 @@ def webui():
                     multiselect=False, allow_custom_value=False
                 )
                 input = gr.File(label="Input Audio File", type="filepath")
-                bpm = gr.Number(label='BPM Value', minimum=20, maximum=200, value=120)
+                bpm = gr.Number(label='BPM Value', minimum=20, maximum=200, value=120, step=0.01, interactive=True)
                 run = gr.Button(value="Generate svp File", variant="primary")
             with gr.Column():
                 output_svp = gr.File(label="Output svp File", type="filepath", interactive=False)
