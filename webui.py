@@ -2,11 +2,9 @@ import os
 import gradio as gr
 from infer import wav2svp
 
-def inference(model, input, bpm):
+def inference(model, input, bpm, extract_pitch):
     model_path = os.path.join('weights', model)
-    if not input.lower().endswith('.wav'):
-        raise gr.Error('Input file must be a wav file.')
-    return wav2svp(input, model_path, bpm)
+    return wav2svp(input, model_path, bpm, extract_pitch)
 
 def webui():
     choices = []
@@ -25,11 +23,12 @@ def webui():
                 )
                 input = gr.File(label="Input Audio File", type="filepath")
                 bpm = gr.Number(label='BPM Value', minimum=20, maximum=200, value=120, step=0.01, interactive=True)
+                extract_pitch = gr.Checkbox(label="Extract Pitch Data", value=True)
                 run = gr.Button(value="Generate svp File", variant="primary")
             with gr.Column():
                 output_svp = gr.File(label="Output svp File", type="filepath", interactive=False)
                 output_midi = gr.File(label="Output midi File", type="filepath", interactive=False)
-        run.click(inference, [model, input, bpm], [output_svp, output_midi])
+        run.click(inference, [model, input, bpm, extract_pitch], [output_svp, output_midi])
     webui.launch(inbrowser=True)
 
 if __name__ == '__main__':

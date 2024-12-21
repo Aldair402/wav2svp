@@ -88,7 +88,7 @@ def get_f0(chunks: list) -> list:
         f0.append(f0_data)
     return f0
 
-def wav2svp(audio_path, model_path, tempo=120):
+def wav2svp(audio_path, model_path, tempo=120, extract_pitch=True):
     os.makedirs('results', exist_ok=True)
 
     chunks = audio_slicer(audio_path)
@@ -99,7 +99,7 @@ def wav2svp(audio_path, model_path, tempo=120):
     template = load_config('template.json')
 
     print("building svp file")
-    svp_path = build_svp(template, midis, f0, tempo, basename)
+    svp_path = build_svp(template, midis, f0, tempo, basename, extract_pitch)
 
     print("building midi file")
     midi_path = os.path.join('results', f'{basename}.mid')

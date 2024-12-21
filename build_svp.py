@@ -5,7 +5,7 @@ import math
 from tqdm import tqdm
 
 
-def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str) -> None:
+def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str, extract_pitch: bool = True) -> str:
     notes = [] # 用于保存的音符数据
     datas = [] # 用于记录的音符数据
 
@@ -62,7 +62,11 @@ def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str) 
     template["tracks"][0]["mainGroup"]["uuid"] = str(uuid.uuid4()).lower()
     template["tracks"][0]["mainRef"]["groupID"] = template["tracks"][0]["mainGroup"]["uuid"]
 
-    pitch = build_pitch(datas, f0, tempo)
+    if extract_pitch:
+        pitch = build_pitch(datas, f0, tempo)
+    else:
+        print("Pitch data is not extracted.")
+        pitch = []
     template["tracks"][0]["mainGroup"]["parameters"]["pitchDelta"]["points"] = pitch
 
     file_path = os.path.join("results", f"{basename}.svp")
