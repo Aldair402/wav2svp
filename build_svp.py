@@ -11,6 +11,7 @@ time_per_frame = 0.02 # 每帧的时间 hop_size / sample_rate
 def build_svp(template, midis, arguments, tempo, basename, extract_pitch, extract_tension, extract_breathiness) -> str:
     notes = [] # 用于保存的音符数据
     datas = [] # 用于记录的音符数据
+    new_uuid = str(uuid.uuid4()).lower()
 
     per_time = 60 / tempo # 每拍的时间
     template["time"]["tempo"] = [{"position": 0, "bpm": tempo}]
@@ -54,8 +55,8 @@ def build_svp(template, midis, arguments, tempo, basename, extract_pitch, extrac
         index += 1
 
     template["tracks"][0]["mainGroup"]["notes"] = notes
-    template["tracks"][0]["mainGroup"]["uuid"] = str(uuid.uuid4()).lower()
-    template["tracks"][0]["mainRef"]["groupID"] = template["tracks"][0]["mainGroup"]["uuid"]
+    template["tracks"][0]["mainGroup"]["uuid"] = new_uuid
+    template["tracks"][0]["mainRef"]["groupID"] = new_uuid
 
     pitch, tension, breathiness = [], [], []
 
@@ -70,6 +71,9 @@ def build_svp(template, midis, arguments, tempo, basename, extract_pitch, extrac
     if extract_breathiness:
         breathiness = build_arguments(arguments, "breathiness", tempo)
     template["tracks"][0]["mainGroup"]["parameters"]["breathiness"]["points"] = breathiness
+
+    if extract_pitch and not extract_tension and not extract_breathiness:
+        template["tracks"][0]["mainRef"]["voice"]["dF0Vbr"] = 0
 
     file_path = os.path.join("results", f"{basename}.svp")
     with open(file_path, "w", encoding="utf-8") as f:
