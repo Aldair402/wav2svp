@@ -2,20 +2,22 @@ import json
 import uuid
 import os
 import math
-from tqdm import tqdm
 
 
-def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str, extract_pitch: bool = True) -> str:
+per_dur = 705600000 # 每拍在sv的时长
+time_per_frame = 0.02 # 每帧的时间 hop_size / sample_rate
+
+
+def build_svp(template, midis, arguments, tempo, basename, extract_pitch, extract_tension, extract_breathiness) -> str:
     notes = [] # 用于保存的音符数据
     datas = [] # 用于记录的音符数据
 
-    per_dur = 705600000 # 每拍在sv的时长
     per_time = 60 / tempo # 每拍的时间
     template["time"]["tempo"] = [{"position": 0, "bpm": tempo}]
 
     index = 0
-    for midi in tqdm(midis, desc="Generate midi notes"):
-        offset = int(f0[index]["offset"] / per_time * per_dur) # 音符的起始时间在sv的时长
+    for midi in midis:
+        offset = int(arguments[index]["offset"] / per_time * per_dur) # 音符的起始时间在sv的时长
 
         dur = midi["note_dur"] # 音符的时长
         pitch = midi["note_midi"] # 音符的音高
@@ -23,16 +25,13 @@ def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str, 
         midi_duration = 0 # 该段音符的总时长
 
         for i in range(len(pitch)):
-
             current_duration = dur[i] / per_time * per_dur # 当前音符在sv的时长
             onset = midi_duration + offset # 音符的起始时间
             midi_duration += int(current_duration)
-            
             if rest[i]: # 休止符
                 continue
-            
             current_pitch = round(pitch[i])
-            
+
             note = {
                 "musicalType": "singing",
                 "onset": int(onset),
@@ -48,13 +47,9 @@ def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str, 
                 "pitchTakes": {"activeTakeId": 0,"takes": [{"id": 0,"expr": 0,"liked": False}]},
                 "timbreTakes": {"activeTakeId": 0,"takes": [{"id": 0,"expr": 0,"liked": False}]}
             }
-
-            data = {
-                "start": int(onset),
-                "finish": int(current_duration + onset),
-                "pitch": int(current_pitch)
-            }
             notes.append(note)
+
+            data = {"start": int(onset),"finish": int(current_duration + onset),"pitch": int(current_pitch)}
             datas.append(data)
         index += 1
 
@@ -62,12 +57,19 @@ def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str, 
     template["tracks"][0]["mainGroup"]["uuid"] = str(uuid.uuid4()).lower()
     template["tracks"][0]["mainRef"]["groupID"] = template["tracks"][0]["mainGroup"]["uuid"]
 
+    pitch, tension, breathiness = [], [], []
+
     if extract_pitch:
-        pitch = build_pitch(datas, f0, tempo)
-    else:
-        print("Pitch data is not extracted.")
-        pitch = []
+        pitch = build_pitch(datas, arguments, tempo)
     template["tracks"][0]["mainGroup"]["parameters"]["pitchDelta"]["points"] = pitch
+
+    if extract_tension:
+        tension = build_arguments(arguments, "tension", tempo)
+    template["tracks"][0]["mainGroup"]["parameters"]["tension"]["points"] = tension
+
+    if extract_breathiness:
+        breathiness = build_arguments(arguments, "breathiness", tempo)
+    template["tracks"][0]["mainGroup"]["parameters"]["breathiness"]["points"] = breathiness
 
     file_path = os.path.join("results", f"{basename}.svp")
     with open(file_path, "w", encoding="utf-8") as f:
@@ -75,14 +77,12 @@ def build_svp(template: dict, midis: list, f0: list, tempo: int, basename: str, 
 
     return file_path
 
-def build_pitch(datas: list, f0s: list, tempo: int) -> list:
-    pitch = [] # 用于保存的音高数据
 
-    per_dur = 705600000 # 每拍在sv的时长
+def build_pitch(datas: list, arguments: list, tempo: int) -> list:
+    pitch = [] # 用于保存的音高数据
     per_time = 60 / tempo # 每拍的时间
-    time_per_frame = 0.01 # 每帧的时间 hop_size / sample_rate
-    
-    for f0 in tqdm(f0s, desc="Generate Pitchs"):
+
+    for f0 in arguments:
         offset = f0["offset"]
         f0_data = f0["f0"]
         for i in range(len(f0_data)):
@@ -92,7 +92,7 @@ def build_pitch(datas: list, f0s: list, tempo: int) -> list:
                 continue
             onset_time = offset + i * time_per_frame # 当前帧的起始时间
             onset = (onset_time / per_time) * per_dur # 当前帧的起始时间在sv的时长
-            pitch_onset = onset
+            pitch_onset = int(onset)
             for data in datas:
                 if data["start"] <= onset and onset < data["finish"]: # 当前帧在音符的时间范围内
                     pitch_cents = calculate_cents_difference(data["pitch"], f0_value)
@@ -102,6 +102,22 @@ def build_pitch(datas: list, f0s: list, tempo: int) -> list:
             pitch.append(pitch_onset)
             pitch.append(pitch_cents)
     return pitch
+
+
+def build_arguments(arguments: dict, data: str, tempo: int, rate=1.0, argu_offset=0.0):
+    args = []
+    per_time = 60 / tempo # 每拍的时间
+
+    for arg in arguments:
+        offset = arg["offset"]
+        datas = arg[data]
+        for i in range(len(datas)):
+            onset_time = offset + i * time_per_frame # 当前帧的起始时间
+            onset = (onset_time / per_time) * per_dur # 当前帧的起始时间在sv的时长
+            args.append(onset)
+            args.append(datas[i] * rate + argu_offset)
+    return args
+
 
 def calculate_cents_difference(midi_note, f0):
     def midi_to_freq(midi_note):

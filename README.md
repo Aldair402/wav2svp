@@ -6,7 +6,7 @@
 
 ### Description
 
-wav2svp is a project that converts a waveform to a Synthesizer V Project (SVP) file. It is based on the [SOME](https://github.com/openvpi/SOME) and [RMVPE](https://github.com/Dream-High/RMVPE). In addition to automatically extracting MIDI, this project can also extract **pitch lines** simultaneously. But unfortunately, at present, it's unable to simultaneously extract lyrics.
+wav2svp is a project that converts a waveform to a Synthesizer V Project (SVP) file. It is based on the [SOME](https://github.com/openvpi/SOME) and [RMVPE](https://github.com/Dream-High/RMVPE). In addition to automatically extracting MIDI, this project can also extract **pitch data**, tension data(Experimental) and breathiness data(Experimental) simultaneously. But unfortunately, at present, it's unable to simultaneously extract lyrics.
 
 ### Usage
 
@@ -47,7 +47,7 @@ You can download the **One click startup package** from [releases](https://githu
 Use `infer.py`:
 
 ```shell
-usage: infer.py [-h] [--model_path MODEL_PATH] [--tempo TEMPO] audio_path
+usage: infer.py [-h] [--model_path MODEL_PATH] [--tempo TEMPO] [--extract_pitch] [--extract_tension] [--extract_breathiness] audio_path
 
 Inference for wav2svp
 
@@ -59,6 +59,10 @@ options:
   --model_path MODEL_PATH
                         Path to the model file, default: weights/model_steps_64000_simplified.ckpt
   --tempo TEMPO         Tempo value for the midi file, default: 120
+  --extract_pitch       Whether to extract pitch from the audio file, default: False
+  --extract_tension     Whether to extract tension from the audio file, default: False
+  --extract_breathiness
+                        Whether to extract breathiness from the audio file, default: False
 ```
 
 You can find the results in the `results` folder.
