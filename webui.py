@@ -21,7 +21,7 @@ def webui():
                 output_svp = gr.File(label="Output svp File", type="filepath", interactive=False)
                 output_midi = gr.File(label="Output midi File", type="filepath", interactive=False)
         run.click(inference, [input, bpm, extract_pitch, extract_tension, extract_breathiness], [output_svp, output_midi])
-    webui.launch(inbrowser=True)
+    webui.launch(inbrowser=True, share=True)
 
 if __name__ == '__main__':
     webui()
