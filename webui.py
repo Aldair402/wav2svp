@@ -2,7 +2,7 @@ import gradio as gr
 from infer import wav2svp
 
 def inference(input, bpm, extract_pitch, extract_tension, extract_breathiness):
-    model_path = "weights/model_steps_64000_simplified.ckpt"
+    model_path = "weights/model.pt"
     return wav2svp(input, model_path, bpm, extract_pitch, extract_tension, extract_breathiness)
 
 def webui():
