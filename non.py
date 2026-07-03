@@ -39,46 +39,59 @@ def run_game_extract(audio_path: str, model_path: str) -> dict:
     """
     Ejecuta GAME sobre el archivo de audio y devuelve las rutas a los archivos de salida.
     """
-    # Rutas absolutas
     abs_audio = os.path.abspath(audio_path)
     abs_model = os.path.abspath(model_path)
     
-    # Crear directorio temporal y copiar el audio (manteniendo el nombre original)
     with tempfile.TemporaryDirectory() as tmpdir:
+        # Copiar el audio al temporal
         audio_basename = os.path.basename(abs_audio)
         temp_audio = os.path.join(tmpdir, audio_basename)
         shutil.copy2(abs_audio, temp_audio)
         
-        # Comando: python game/infer.py extract <tmpdir> -m <abs_model> --glob * --output-formats mid,txt,csv
-        # Usamos --glob * para que coincida con cualquier archivo (incluso si no es .wav)
+        # Comando: python game/infer.py extract <tmpdir> -m <abs_model> --glob *.wav --output-formats mid,txt,csv
         cmd = [
             'python', 'game/infer.py', 'extract',
             tmpdir,
             '-m', abs_model,
-            '--glob', '*',
+            '--glob', '*.wav',
             '--output-formats', 'mid,txt,csv'
         ]
-        # Ejecutar desde el directorio original (donde están config.yaml y demás)
+        
+        # Ejecutar desde el directorio original (para que GAME encuentre sus configuraciones)
         original_cwd = os.getcwd()
         try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=original_cwd)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Error al ejecutar GAME:\nSTDOUT: {e.stdout}\nSTDERR: {e.stderr}")
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=original_cwd)
+            # Mostrar salida para depuración
+            if result.stdout:
+                print("STDOUT:", result.stdout)
+            if result.stderr:
+                print("STDERR:", result.stderr)
+            if result.returncode != 0:
+                raise RuntimeError(f"GAME terminó con código {result.returncode}\nSTDERR: {result.stderr}")
+        except Exception as e:
+            raise RuntimeError(f"Error al ejecutar GAME: {e}")
         
-        # Buscar archivos generados
-        basename = os.path.splitext(audio_basename)[0]
+        # Listar todos los archivos en el temporal para depuración
+        all_files = []
+        for root, dirs, files in os.walk(tmpdir):
+            for f in files:
+                all_files.append(os.path.join(root, f))
+        print("Archivos generados en el temporal:", all_files)
+        
+        # Buscar archivos de salida
         mid_file = None
         txt_file = None
         csv_file = None
-        for root, dirs, files in os.walk(tmpdir):
-            for f in files:
-                if f.endswith('.mid'):
-                    mid_file = os.path.join(root, f)
-                elif f.endswith('.txt'):
-                    txt_file = os.path.join(root, f)
-                elif f.endswith('.csv'):
-                    csv_file = os.path.join(root, f)
-        # Fallback si no se encontraron (quizás se guardaron con otro nombre)
+        for filepath in all_files:
+            if filepath.endswith('.mid'):
+                mid_file = filepath
+            elif filepath.endswith('.txt'):
+                txt_file = filepath
+            elif filepath.endswith('.csv'):
+                csv_file = filepath
+        
+        # Si no se encontraron, intentar con el nombre base en la raíz del temporal
+        basename = os.path.splitext(audio_basename)[0]
         if not mid_file:
             mid_file = os.path.join(tmpdir, f'{basename}.mid')
         if not txt_file:
@@ -86,11 +99,14 @@ def run_game_extract(audio_path: str, model_path: str) -> dict:
         if not csv_file:
             csv_file = os.path.join(tmpdir, f'{basename}.csv')
         
+        # Verificar existencia
         if not os.path.exists(mid_file):
-            raise FileNotFoundError(f"No se generó el archivo MIDI en {tmpdir}")
+            raise FileNotFoundError(f"No se generó el archivo MIDI. Archivos encontrados: {all_files}")
         if not os.path.exists(txt_file) and not os.path.exists(csv_file):
-            raise FileNotFoundError(f"No se generó archivo de características en {tmpdir}")
+            raise FileNotFoundError(f"No se generó archivo de características (txt/csv). Archivos encontrados: {all_files}")
         
+        # Si se encontraron, devolver rutas (los archivos se eliminarán al salir del contexto,
+        # pero los leeremos antes de que termine la función)
         return {
             'mid': mid_file,
             'txt': txt_file,
@@ -178,7 +194,6 @@ def wav2svp(audio_path, model_path, tempo=120, extract_pitch=False, extract_tens
     os.makedirs('results', exist_ok=True)
     basename = os.path.basename(audio_path).split('.')[0]
     
-    # Ejecutar GAME
     try:
         output_files = run_game_extract(audio_path, model_path)
         notes, pitch_frames, tension_frames, breath_frames = parse_game_outputs(output_files, tempo)
